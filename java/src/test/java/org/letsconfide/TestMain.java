@@ -1,8 +1,6 @@
 package org.letsconfide;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.letsconfide.config.ConfigHeaders;
@@ -13,7 +11,8 @@ import org.letsconfide.platform.DeviceFactory;
 import org.letsconfide.platform.FakeDeviceFactory;
 import org.letsconfide.platform.tpm.TPMDeviceFactory;
 import org.yaml.snakeyaml.Yaml;
-import tss.TpmFactory;
+import tss.*;
+import tss.tpm.TPM_CC;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -28,14 +27,16 @@ import java.util.regex.Pattern;
 @RunWith(Parameterized.class)
 public class TestMain
 {
-    enum DeviceType {FAKE, SIMULATOR, REAL}
+    enum DeviceType
+    {FAKE, SIMULATOR, REAL}
 
     private static final DeviceType TEST_MODE;
     private static final DeviceFactory FACTORY;
 
     private static final Pattern CIPHER_PATTERN;
     private final TestConfig testConfig;
-    private static final Pattern HASH_PATTERN ;
+    private static final Pattern HASH_PATTERN;
+
 
     static
     {
@@ -60,12 +61,18 @@ public class TestMain
             case FAKE:
                 return new FakeDeviceFactory();
             case SIMULATOR:
-                return new TPMDeviceFactory(TpmFactory::localTpmSimulator);
+                return new TPMDeviceFactory(TpmSimulator::new);
             case REAL:
-                return new TPMDeviceFactory(TpmFactory::platformTpm);
+                return TPMDeviceFactory.PLATFORM_INSTANCE;
             default:
                 throw new LetsConfideException("org.letsconfide.test.DeviceType is invalid");
         }
+    }
+
+    @AfterClass
+    public static void afterClass()
+    {
+        TpmSimulator.closeDevice();
     }
 
     @Parameterized.Parameters
@@ -94,25 +101,25 @@ public class TestMain
         List<ConfigHeaders> result = new ArrayList<>((numCiphers * numCiphers * numCiphers) + numHashes);
         for (CipherType prim : allCiphers)
         {
-            if(ignoreCipherType(prim))
+            if (ignoreCipherType(prim))
             {
                 continue;
             }
             for (CipherType storage : allCiphers)
             {
-                if(ignoreCipherType(storage))
+                if (ignoreCipherType(storage))
                 {
                     continue;
                 }
                 for (CipherType ephemeral : allCiphers)
                 {
-                    if(ignoreCipherType(ephemeral))
+                    if (ignoreCipherType(ephemeral))
                     {
                         continue;
                     }
                     for (HashType pcrHash : allHashes)
                     {
-                        if(HASH_PATTERN.matcher(pcrHash.name()).matches())
+                        if (HASH_PATTERN.matcher(pcrHash.name()).matches())
                         {
                             result.add(new ConfigHeaders(prim, storage, ephemeral, ConfigHeaders.DEFAULT.getPcrSelection(), pcrHash));
                         }
@@ -120,7 +127,7 @@ public class TestMain
                 }
             }
         }
-        if(result.isEmpty())
+        if (result.isEmpty())
         {
             throw new LetsConfideException("No tests for current criteria");
         }
@@ -137,6 +144,12 @@ public class TestMain
     {
         testConfig.init();
         Assert.assertNotNull(testConfig.getManagerFromRawData());
+    }
+
+    @After
+    public void after()
+    {
+        Assert.assertEquals(0, TpmSimulator.openSimulators );
     }
 
     private static boolean ignoreCipherType(CipherType type)
@@ -186,11 +199,11 @@ public class TestMain
 
     private void assertPasswords(@SuppressWarnings("unused") SensitiveDataManager m)
     {
-        try (SensitiveDataManager.DataAccessSession session = m.new DataAccessSession())
+        try (SensitiveDataManager.DataAccessSession session = m.startDataAccessSession())
         {
             for (Map.Entry<String, String> entry : testConfig.getData().entrySet())
             {
-                Assert.assertEquals(entry.getValue(), session.decrypt(entry.getKey()));
+                Assert.assertArrayEquals(entry.getValue().toCharArray(), session.decrypt(entry.getKey()));
             }
         }
     }
@@ -210,7 +223,7 @@ public class TestMain
     @SuppressWarnings("unused")
     private void assertKeyNotFound(SensitiveDataManager m)
     {
-        try (SensitiveDataManager.DataAccessSession session = m.new DataAccessSession())
+        try (SensitiveDataManager.DataAccessSession session = m.startDataAccessSession())
         {
             try
             {
@@ -324,6 +337,65 @@ public class TestMain
         public SensitiveDataManager getManagerFromEncryptedData()
         {
             return managerFromEncryptedData;
+        }
+    }
+
+    /**
+     * A TPM that connects the Microsoft TPM simulator on TCP port 2322.
+     * The Simulator does not handle close and reconnect properly, this implementation works around that.
+     */
+    private static class TpmSimulator extends Tpm
+    {
+        private static final Object deviceSync = new Object();
+        private final AtomicBoolean isOpen = new AtomicBoolean(true);
+        private static TpmDevice tpmDevice;
+        private static int openSimulators = 0;
+        private static TpmDevice getTpmDevice()
+        {
+            synchronized (deviceSync)
+            {
+                if(tpmDevice == null)
+                {
+                    tpmDevice =TpmFactory.localTpmSimulator()._getDevice();
+                }
+                return tpmDevice;
+            }
+        }
+
+        static void closeDevice()
+        {
+            synchronized (deviceSync)
+            {
+                if(tpmDevice != null)
+                {
+                    tpmDevice.close();
+                }
+            }
+        }
+
+        public TpmSimulator()
+        {
+            _setDevice(getTpmDevice());
+            // Expect only one TPM instance at given any time.
+            Assert.assertEquals(0, openSimulators);
+            openSimulators++;
+        }
+
+        @Override
+        protected void DispatchCommand(TPM_CC cmdCode, ReqStructure req, RespStructure resp)
+        {
+            if(!isOpen.get())
+            {
+                throw new LetsConfideException("TPM is closed");
+            }
+            super.DispatchCommand(cmdCode, req, resp);
+        }
+
+        @Override
+        public void close()
+        {
+            isOpen.set(false);
+            openSimulators--;
         }
     }
 

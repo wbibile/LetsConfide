@@ -144,10 +144,10 @@ public class ConfigParserTest
          Utils.writeToYamlFile(root, yamlFile);
          SensitiveDataManager manager = new ConfigParser().parse(yamlFile.toFile(), new FakeDeviceFactory());
 
-         try(SensitiveDataManager.DataAccessSession session = manager.new DataAccessSession())
+         try(SensitiveDataManager.DataAccessSession session = manager.startDataAccessSession())
          {
              // Check data
-             Assert.assertEquals("ub,KbVsh/XUj~=~F#", session.decrypt("pwd1"));
+             Assert.assertArrayEquals("ub,KbVsh/XUj~=~F#".toCharArray(), session.decrypt("pwd1"));
          }
          // Check default headers.
          Assert.assertEquals(DEFAULT, manager.getHeaders());

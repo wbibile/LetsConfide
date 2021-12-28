@@ -54,7 +54,7 @@ public class ConfigParser
      * Starts parsing the input file.
      * @param file The input file
      * @param deviceFactory A device factory
-     * @return The resultent {@link SensitiveDataManager}
+     * @return The resultant {@link SensitiveDataManager}
      */
     public SensitiveDataManager parse(File file, DeviceFactory deviceFactory) throws IOException
     {

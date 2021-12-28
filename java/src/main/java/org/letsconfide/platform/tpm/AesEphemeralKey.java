@@ -20,7 +20,6 @@ public class AesEphemeralKey extends TPMKey implements TpmKeyEncryptionKey
     private final List<byte[]> tokens;
     // Delegates to an AES primary key using the NULL hierarchy in the TPM.
     private final TPM_HANDLE keyHandle;
-    private final byte[] iv;
 
     /**
      * Instantiates a new {@link AesEphemeralKey} by generating a new key if the token list is null,
@@ -34,9 +33,7 @@ public class AesEphemeralKey extends TPMKey implements TpmKeyEncryptionKey
         super(tpm);
         if(tokenList == null)
         {
-            tokens = new ArrayList<>(3);
-            // Initialization vector, size is equals to the AES block size.
-            tokens.add(TpmUtils.randomBytes(tpm, 16));
+            tokens = new ArrayList<>(2);
             // Optimal size for authValue is the nameHash size of the TPM object being created
             tokens.add(TpmUtils.randomBytes(tpm, SHA256.getNumBits()/8));
             // Secret data must equal the key size
@@ -44,7 +41,7 @@ public class AesEphemeralKey extends TPMKey implements TpmKeyEncryptionKey
         }
         else
         {
-            if(tokenList.size() != 3)
+            if(tokenList.size() != 2)
             {
 
                 // FIXME: Cause this failure and ensure proper cleanup.
@@ -53,9 +50,8 @@ public class AesEphemeralKey extends TPMKey implements TpmKeyEncryptionKey
             this.tokens = tokenList;
         }
         // Initialization vector for AES_FSB mode.
-        this.iv = tokens.get(0);
-        byte[] authValue = tokens.get(1);
-        byte[] secretData = tokens.get(2);
+        byte[] authValue = tokens.get(0);
+        byte[] secretData = tokens.get(1);
         TPMS_SENSITIVE_CREATE sensitive = new TPMS_SENSITIVE_CREATE(authValue, secretData);
         CreatePrimaryResponse cRes = tpm.CreatePrimary(TPM_HANDLE.from(TPM_RH.NULL), sensitive, getPrimaryTemplate(keySize), new byte[0],
                 new TPMS_PCR_SELECTION[]{new TPMS_PCR_SELECTION(TPM_ALG_ID.SHA256, new byte[]{1, 0, 0})});
@@ -99,7 +95,7 @@ public class AesEphemeralKey extends TPMKey implements TpmKeyEncryptionKey
 
         WrapUnwrapHandler()
         {
-            super(getTpm(), keyHandle);
+            super(getTpm());
         }
         @Override
         byte[] doWrap(byte[] iv, byte[] dek)

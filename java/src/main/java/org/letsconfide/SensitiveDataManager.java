@@ -8,6 +8,7 @@ import org.letsconfide.platform.DeviceFactory;
 import org.letsconfide.platform.SecurityDevice;
 
 import java.io.File;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -132,7 +133,8 @@ public class SensitiveDataManager
     }
 
     /**
-     * Removes PKCS#7 padding from the given array of bytes
+     * Removes PKCS#7 padding from the given array of bytes.
+     * Note that, this method erases the input array.
      * @param bytes padded array of bytes
      * @return un padded array of bytes
      */
@@ -147,6 +149,10 @@ public class SensitiveDataManager
         catch (InvalidCipherTextException e)
         {
             throw new LetsConfideException("Unable to remove padding in encrypted data");
+        }
+        finally
+        {
+            Utils.erase(bytes);
         }
     }
 
@@ -166,6 +172,12 @@ public class SensitiveDataManager
         return encryptedData;
     }
 
+    public DataAccessSession startDataAccessSession()
+    {
+        return new DataAccessSession();
+    }
+
+
     /**
      * A session used to access encrypted data.<BR>
      * When initializing a session the "ephemeral host based data encryption key" is decrypted using the device (TPM),
@@ -179,7 +191,7 @@ public class SensitiveDataManager
         /**
          * Initializes the session by decrypting the ephemeral host data encryption key using the device.
          */
-        public DataAccessSession()
+        private DataAccessSession()
         {
             try(SecurityDevice device = factory.newDevice(headers, encryptedData.getDeviceTokens()))
             {
@@ -193,7 +205,7 @@ public class SensitiveDataManager
          * @param key A Key in the data Map
          * @return Decrypted value corresponding to the given key in the Map
          */
-        public String decrypt(String key)
+        public char[] decrypt(String key)
         {
             byte[] encData = dataMap.get(key);
             if (encData == null)
@@ -201,7 +213,15 @@ public class SensitiveDataManager
                 // Do not reveal the name of the key.
                 throw new LetsConfideException("Key not found");
             }
-            return new String(removePKCS7Padding(resolvedKey.decrypt(encData)), StandardCharsets.UTF_8);
+            byte[] bytes = removePKCS7Padding(resolvedKey.decrypt(encData));
+            try
+            {
+                return StandardCharsets.UTF_8.decode(ByteBuffer.wrap(bytes)).array();
+            }
+            finally
+            {
+                Utils.erase(bytes);
+            }
         }
 
         /**

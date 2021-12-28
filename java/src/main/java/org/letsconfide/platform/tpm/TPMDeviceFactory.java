@@ -4,6 +4,7 @@ import org.letsconfide.config.ConfigHeaders;
 import org.letsconfide.platform.DeviceFactory;
 import org.letsconfide.platform.SecurityDevice;
 import tss.Tpm;
+import tss.TpmFactory;
 
 import javax.annotation.CheckForNull;
 import java.util.AbstractMap;
@@ -21,15 +22,23 @@ public class TPMDeviceFactory implements DeviceFactory
 {
     private final List<byte[]> ephemeralTokens = new CopyOnWriteArrayList<>();
     private final AtomicBoolean ephemeralTokensGenerated = new AtomicBoolean();
-    private final Tpm tpm;
+    // Context for synchronizing access to the TPM.
+    private final Object tpmSync = new Object();
 
     /**
-     *
+     * Platform device factory.
+     */
+    public static final DeviceFactory PLATFORM_INSTANCE =  new TPMDeviceFactory(TpmFactory::platformTpm);
+    private final Supplier<Tpm> factory;
+
+    /**
+     * Constructs a TPM device factory.
+     * Use {@link #PLATFORM_INSTANCE} to get the TPM platform TPM factory.
      * @param tpmFactory TSS TPM supplier
      */
     public TPMDeviceFactory(Supplier<Tpm> tpmFactory)
     {
-        this.tpm = tpmFactory.get();
+        this.factory = tpmFactory;
     }
 
     /**
@@ -54,23 +63,24 @@ public class TPMDeviceFactory implements DeviceFactory
         return new AbstractMap.SimpleEntry<>(result, result.getDeviceTokens());
     }
 
-    private TPMDevice newDevice(ConfigHeaders headers, @CheckForNull List<byte[]> deviceTokens,@CheckForNull List<byte[]> ephemeralTokens)
+    private TPMDevice newDevice(ConfigHeaders headers, @CheckForNull List<byte[]> deviceTokens, @CheckForNull List<byte[]> ephemeralTokens)
     {
-        synchronized (tpm)
+        synchronized (tpmSync)
         {
             TPMDevice result;
             if (ephemeralTokensGenerated.compareAndSet(false, true))
             {
                 assert ephemeralTokens == null || ephemeralTokens.isEmpty();
-                result = new TPMDevice(tpm, headers, deviceTokens, null);
+                result = new TPMDevice(factory.get(), tpmSync, headers, deviceTokens, null);
                 this.ephemeralTokens.addAll(result.getEphemeralTokens());
             }
             else
             {
-                result = new TPMDevice(tpm, headers, deviceTokens, ephemeralTokens);
+                result = new TPMDevice(factory.get(), tpmSync, headers, deviceTokens, ephemeralTokens);
             }
             return result;
         }
     }
+
 
 }

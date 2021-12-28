@@ -6,6 +6,7 @@ import org.letsconfide.platform.SecurityDevice;
 import tss.Tpm;
 
 import javax.annotation.CheckForNull;
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -20,17 +21,21 @@ class TPMDevice implements SecurityDevice
     private final TpmKeyEncryptionKey storageKey;
     private final TpmKeyEncryptionKey ephemeralKey;
 
+    // Context for synchronizing access to the TPM.
+    private final Object tpmSync;
+
     /**
      * @param tpm The TPM
      * @param headers Config headers
      * @param deviceTokens device tokens used for reconstituting previous persistent state
      * @param ephemeralTokens device tokens used for reconstituting previous ephemeral state
      */
-    TPMDevice(Tpm tpm, ConfigHeaders headers, List<byte[]> deviceTokens, List<byte[]> ephemeralTokens)
+    TPMDevice(Tpm tpm, Object tpmSync, ConfigHeaders headers, List<byte[]> deviceTokens, List<byte[]> ephemeralTokens)
     {
         this.tpm = tpm;
+        this.tpmSync = tpmSync;
         // Disallow concurrent operations on the TPM
-        synchronized(this.tpm)
+        synchronized(this.tpmSync)
         {
             primaryKey = createPrimary(tpm, headers);
             storageKey = createStorageKey(primaryKey, headers, deviceTokens);
@@ -110,7 +115,7 @@ class TPMDevice implements SecurityDevice
     public byte[] wrap(byte[] dek)
     {
         // Disallow concurrent operations on the TPM
-        synchronized(tpm)
+        synchronized(tpmSync)
         {
             return storageKey.wrap(dek);
         }
@@ -120,7 +125,7 @@ class TPMDevice implements SecurityDevice
     public byte[] unwrap(byte[] encryptedDek)
     {
         // Disallow concurrent operations on the TPM
-        synchronized(tpm)
+        synchronized(tpmSync)
         {
             return storageKey.unwrap(encryptedDek);
         }
@@ -130,7 +135,7 @@ class TPMDevice implements SecurityDevice
     public byte[] wrapEphemeral(byte[] dek)
     {
         // Disallow concurrent operations on the TPM
-        synchronized(tpm)
+        synchronized(tpmSync)
         {
             return ephemeralKey.wrap(dek);
         }
@@ -140,7 +145,7 @@ class TPMDevice implements SecurityDevice
     public byte[] unwrapEphemeral(byte[] encryptedDek)
     {
         // Disallow concurrent operations on the TPM
-        synchronized(tpm)
+        synchronized(tpmSync)
         {
             return ephemeralKey.unwrap(encryptedDek);
         }
@@ -150,7 +155,7 @@ class TPMDevice implements SecurityDevice
     public byte[] getRandomBytes(int size)
     {
         // Disallow concurrent operations on the TPM
-        synchronized(tpm)
+        synchronized(tpmSync)
         {
             return TpmUtils.randomBytes(tpm, size);
         }
@@ -160,11 +165,19 @@ class TPMDevice implements SecurityDevice
     public void close() throws LetsConfideException
     {
         // Disallow concurrent operations on the TPM
-        synchronized(tpm)
+        synchronized(tpmSync)
         {
             tpm.FlushContext(storageKey.getKeyHandle());
             tpm.FlushContext(primaryKey.getKeyHandle());
             tpm.FlushContext(ephemeralKey.getKeyHandle());
+            try
+            {
+                tpm.close();
+            }
+            catch (IOException e)
+            {
+                throw new LetsConfideException("Error closing the TPM connection", e);
+            }
         }
     }
 

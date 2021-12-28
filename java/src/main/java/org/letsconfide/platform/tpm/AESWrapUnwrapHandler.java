@@ -3,7 +3,6 @@ package org.letsconfide.platform.tpm;
 import org.letsconfide.LetsConfideException;
 import org.letsconfide.Utils;
 import tss.Tpm;
-import tss.tpm.TPM_HANDLE;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,9 +17,8 @@ abstract class AESWrapUnwrapHandler
 
     /**
      * @param tpm The TPM
-     * @param tpmKeyHandle KEK handle on the TPM
      */
-    AESWrapUnwrapHandler(Tpm tpm, TPM_HANDLE tpmKeyHandle)
+    AESWrapUnwrapHandler(Tpm tpm)
     {
         this.tpm = tpm;
     }
@@ -65,7 +63,7 @@ abstract class AESWrapUnwrapHandler
     /**
      * Unwraps the DEK using the device.
      * @param iv  The IV
-     * @param :dek The DEK
+     * @param wrappedDek The DEK
      * @return Unwrapped DEK
      */
     abstract byte[] doUnwrap(byte[] iv, byte[] wrappedDek);

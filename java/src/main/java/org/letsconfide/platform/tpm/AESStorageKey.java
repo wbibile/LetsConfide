@@ -116,7 +116,7 @@ public class AESStorageKey extends TPMKey implements TpmKeyEncryptionKey
 
         WrapUnwrapHandler()
         {
-            super(getTpm(), keyHandle);
+            super(getTpm());
         }
 
         @Override
