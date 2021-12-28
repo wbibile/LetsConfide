@@ -75,11 +75,11 @@ public class TestMain
         switch (TEST_MODE)
         {
             case FAKE:
-                result.add(warpInArray(ConfigHeaders.DEFAULT));
+                result.add(wrapInArray(ConfigHeaders.DEFAULT));
                 break;
             case SIMULATOR:
             case REAL:
-                getAllCipherHashPermutations().stream().map(TestMain::warpInArray).forEach(result::add);
+                getAllCipherHashPermutations().stream().map(TestMain::wrapInArray).forEach(result::add);
                 break;
         }
         return result;
@@ -144,7 +144,7 @@ public class TestMain
         return !CIPHER_PATTERN.matcher(type.name()).matches();
     }
 
-    private static TestConfig[] warpInArray(ConfigHeaders headers)
+    private static TestConfig[] wrapInArray(ConfigHeaders headers)
     {
         TestConfig[] result = new TestConfig[1];
         result[0] = new TestConfig(headers);

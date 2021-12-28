@@ -1,7 +1,6 @@
 package org.letsconfide.platform.tpm;
 
 import org.letsconfide.LetsConfideException;
-import org.letsconfide.Utils;
 import org.letsconfide.config.ConfigHeaders;
 import tss.Tpm;
 import tss.tpm.*;
@@ -103,35 +102,43 @@ public class AESStorageKey extends TPMKey implements TpmKeyEncryptionKey
     @Override
     public byte[] wrap(byte[] dek)
     {
-        byte[] iv = TpmUtils.randomBytes(getTpm(), 16);
-        List<byte[]> result = new ArrayList<>(2);
-        result.add(iv);
-        try(WithPcrPolicySession withSession = new WithPcrPolicySession(getTpm(), headers))
-        {
-            withSession.initPcrPolicy();
-            // No special key wrapping algorithm is used as we are using randomly generated IV.
-            byte[] encKey = getTpm()._withSession(withSession.getSessionHandle()).EncryptDecrypt(keyHandle, (byte) 0, TPM_ALG_ID.CFB, iv, dek).outData;
-            result.add(encKey);
-
-        }
-        return Utils.createSizedByteArray(result);
+        return new WrapUnwrapHandler().wrap(dek);
     }
 
     @Override
     public byte[] unwrap(byte[] encryptedDek)
     {
-        List<byte[]> parts = Utils.splitSizedByteArray(encryptedDek);
-        if(parts.size() != 2)
+       return new WrapUnwrapHandler().unwrap(encryptedDek);
+    }
+
+    private class WrapUnwrapHandler extends AESWrapUnwrapHandler
+    {
+
+        WrapUnwrapHandler()
         {
-            throw new LetsConfideException("Encrypted key format is invalid");
+            super(getTpm(), keyHandle);
         }
-        byte[] iv = parts.get(0);
-        byte[] encKey = parts.get(1);
-        try(WithPcrPolicySession withSession = new WithPcrPolicySession(getTpm(), headers))
+
+        @Override
+        byte[] doWrap(byte[] iv, byte[] dek)
         {
-            withSession.initPcrPolicy();
-            return getTpm()._withSession(withSession.getSessionHandle()).EncryptDecrypt(keyHandle, (byte) 1, TPM_ALG_ID.CFB, iv, encKey).outData;
+            try(WithPcrPolicySession withSession = new WithPcrPolicySession(getTpm(), headers))
+            {
+                withSession.initPcrPolicy();
+                return getTpm()._withSession(withSession.getSessionHandle()).EncryptDecrypt(getKeyHandle(), (byte) 0, TPM_ALG_ID.CFB, iv, dek).outData;
+            }
+        }
+
+        @Override
+        byte[] doUnwrap(byte[] iv, byte[] wrappedDek)
+        {
+            try(WithPcrPolicySession withSession = new WithPcrPolicySession(getTpm(), headers))
+            {
+                withSession.initPcrPolicy();
+                return getTpm()._withSession(withSession.getSessionHandle()).EncryptDecrypt(getKeyHandle(), (byte) 1, TPM_ALG_ID.CFB, iv, wrappedDek).outData;
+            }
         }
     }
+
     
 }

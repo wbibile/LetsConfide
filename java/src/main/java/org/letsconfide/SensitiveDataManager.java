@@ -7,6 +7,7 @@ import org.letsconfide.config.EncryptedData;
 import org.letsconfide.platform.DeviceFactory;
 import org.letsconfide.platform.SecurityDevice;
 
+import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,8 +17,9 @@ import java.util.Map;
 import static org.letsconfide.HostDEK.KEY_SIZE;
 
 /**
- * A manager for encrypted data, this functions as a facade for accessing the services provided by LetsConfide.
- * An instance is obtained by parsing the YAML data/config file.
+ * A facade for accessing services provided by LetsConfide.
+ * An instance of this class should be obtained by parsing the YAML data/config file see {@link org.letsconfide.config.ConfigParser#parse(File, DeviceFactory)}
+ *
  */
 public class SensitiveDataManager
 {

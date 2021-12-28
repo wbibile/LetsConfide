@@ -72,16 +72,6 @@ public class AesEphemeralKey extends TPMKey implements TpmKeyEncryptionKey
                 new TPM2B_DIGEST_SYMCIPHER());
     }
 
-    public byte[] wrap(byte[] dek)
-    {
-        return getTpm().EncryptDecrypt(getKeyHandle(), (byte) 0, TPM_ALG_ID.CFB, iv, dek).outData;
-    }
-
-    public byte[] unwrap(byte[] encryptedDek)
-    {
-        return getTpm().EncryptDecrypt(getKeyHandle(), (byte) 1, TPM_ALG_ID.CFB, iv, encryptedDek).outData;
-    }
-
     @Override
     public List<byte[]> getTokens()
     {
@@ -92,5 +82,35 @@ public class AesEphemeralKey extends TPMKey implements TpmKeyEncryptionKey
     public TPM_HANDLE getKeyHandle()
     {
         return keyHandle;
+    }
+
+    public byte[] wrap(byte[] dek)
+    {
+        return new WrapUnwrapHandler().wrap(dek);
+    }
+
+    public byte[] unwrap(byte[] encryptedDek)
+    {
+        return new WrapUnwrapHandler().unwrap(encryptedDek);
+    }
+
+    private class WrapUnwrapHandler extends AESWrapUnwrapHandler
+    {
+
+        WrapUnwrapHandler()
+        {
+            super(getTpm(), keyHandle);
+        }
+        @Override
+        byte[] doWrap(byte[] iv, byte[] dek)
+        {
+            return getTpm().EncryptDecrypt(getKeyHandle(), (byte) 0, TPM_ALG_ID.CFB, iv, dek).outData;
+        }
+
+        @Override
+        byte[] doUnwrap(byte[] iv, byte[] wrappedDek)
+        {
+            return getTpm().EncryptDecrypt(getKeyHandle(), (byte) 1, TPM_ALG_ID.CFB, iv, wrappedDek).outData;
+        }
     }
 }

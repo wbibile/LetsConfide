@@ -27,7 +27,7 @@ public class EncryptedData
     }
 
     /**
-     * Gets the seed necessary for reconstituting a non-ephemeral {@link org.letsconfide.HostDEK}.
+     * Gets the seed necessary for reconstituting  the encrypted key.
      * @return The seed
      */
     public byte[] getSeed()
@@ -36,7 +36,7 @@ public class EncryptedData
     }
 
     /**
-     * Gets the encrypted key, which would eventually be wrapped by a non-ephemeral  {@link org.letsconfide.HostDEK}.
+     * Gets the encrypted key.
      * @return The encrypted key
      */
     public byte[] getEncKey()
@@ -54,9 +54,9 @@ public class EncryptedData
     }
 
     /**
-     * Gets the device tokens. These tokens are used to reconstitute device keys.
-     * For a TPM device this consists of the private and public portions of a storage key.
-     * @return The device token
+     * Gets the device tokens. These tokens are used to reconstitute device keys,
+     * for a TPM device this consists of the private and public portions of a storage key.
+     * @return List of device tokens
      */
     public List<byte[]> getDeviceTokens()
     {

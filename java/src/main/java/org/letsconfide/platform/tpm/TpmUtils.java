@@ -7,7 +7,9 @@ import tss.Tpm;
 import tss.tpm.*;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * TPM related utilities.
@@ -119,4 +121,5 @@ class TpmUtils
     {
         return primary.getTpm().Load(primary.getKeyHandle(), TPM2B_PRIVATE.fromBytes(privateBytes), TPMT_PUBLIC.fromBytes(publicBytes));
     }
+
 }
