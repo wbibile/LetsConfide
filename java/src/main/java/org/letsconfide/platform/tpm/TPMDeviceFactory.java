@@ -1,5 +1,6 @@
 package org.letsconfide.platform.tpm;
 
+import org.letsconfide.LetsConfideException;
 import org.letsconfide.config.ConfigHeaders;
 import org.letsconfide.platform.DeviceFactory;
 import org.letsconfide.platform.SecurityDevice;
@@ -68,15 +69,20 @@ public class TPMDeviceFactory implements DeviceFactory
         synchronized (tpmSync)
         {
             TPMDevice result;
+            Tpm tpm = factory.get();
+            if(tpm == null)
+            {
+                throw new LetsConfideException("Could not find a TPM 2.0 compatible device!");
+            }
             if (ephemeralTokensGenerated.compareAndSet(false, true))
             {
                 assert ephemeralTokens == null || ephemeralTokens.isEmpty();
-                result = new TPMDevice(factory.get(), tpmSync, headers, deviceTokens, null);
+                result = new TPMDevice(tpm, tpmSync, headers, deviceTokens, null);
                 this.ephemeralTokens.addAll(result.getEphemeralTokens());
             }
             else
             {
-                result = new TPMDevice(factory.get(), tpmSync, headers, deviceTokens, ephemeralTokens);
+                result = new TPMDevice(tpm, tpmSync, headers, deviceTokens, ephemeralTokens);
             }
             return result;
         }
