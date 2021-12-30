@@ -103,16 +103,10 @@ public class ConfigParserTest
     @Test
     public void testDuplicateData() throws IOException
     {
-        Map<String, Object> root = new LinkedHashMap<>();
-        Map<String, Object> headers = new LinkedHashMap<>();
-        headers.put("primaryKeyType", "AES256");
-        headers.put("storageKeyType", "AES256");
-        headers.put("pcrSelection", "1");
-        headers.put("pcrHash", "SHA256");
+        Map<String, Object> root = yamlRootWithStandardHeaders();
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("my_passwd", "ub,KbVsh/XUj~=~F#");
         data.put("my_passwd2", "ub,KbVsh/XUj~=~F#");
-        root.put("headers", headers);
         root.put("data", data);
 
         String yamlStr = Utils.newYamlInstance().dump(root);
@@ -130,6 +124,18 @@ public class ConfigParserTest
             Assert.assertEquals("Error parsing YAML file: Duplicate key at line 7", e.getMessage());
         }
 
+    }
+
+    private static Map<String, Object> yamlRootWithStandardHeaders()
+    {
+        Map<String, Object> root = new LinkedHashMap<>();
+        Map<String, Object> headers = new LinkedHashMap<>();
+        headers.put("primaryKeyType", "AES256");
+        headers.put("storageKeyType", "AES256");
+        headers.put("pcrSelection", "1");
+        headers.put("pcrHash", "SHA256");
+        root.put("headers", headers);
+        return root;
     }
 
     @Test
@@ -205,14 +211,7 @@ public class ConfigParserTest
     @Test
     public void testMissingDataElements() throws Exception
     {
-        Map<String, Object> root = new LinkedHashMap<>();
-        Map<String, Object> headers = new LinkedHashMap<>();
-        headers.put("primaryKeyType", "AES256");
-        headers.put("storageKeyType", "AES256");
-        headers.put("pcrSelection", "1");
-        headers.put("pcrHash", "SHA256");
-        root.put("headers",  headers);
-
+        Map<String, Object> root = yamlRootWithStandardHeaders();
         root.put("data",  "foobar");
         Path yamlFile = Files.createTempFile("testYaml", ".yaml");
         Utils.writeToYamlFile(root, yamlFile);
@@ -233,13 +232,7 @@ public class ConfigParserTest
     @Test
     public void testMissingData() throws Exception
     {
-        Map<String, Object> root = new LinkedHashMap<>();
-        Map<String, Object> headers = new LinkedHashMap<>();
-        headers.put("primaryKeyType", "AES256");
-        headers.put("storageKeyType", "AES256");
-        headers.put("pcrSelection", "1");
-        headers.put("pcrHash", "SHA256");
-        root.put("headers",  headers);
+        Map<String, Object> root = yamlRootWithStandardHeaders();
         // No data entry in the YAML file.
 
         Path yamlFile = Files.createTempFile("testYaml", ".yaml");
@@ -253,6 +246,29 @@ public class ConfigParserTest
         catch (LetsConfideException e)
         {
             Assert.assertEquals("Error parsing YAML file: Unexpected entry at line 5", e.getMessage());
+        }
+
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    @Test
+    public void testEmptyData() throws Exception
+    {
+        Map<String, Object> root = yamlRootWithStandardHeaders();
+        // Add empty data.
+        root.put("data",  new LinkedHashMap<>());
+
+        Path yamlFile = Files.createTempFile("testYaml", ".yaml");
+        Utils.writeToYamlFile(root, yamlFile);
+
+        try
+        {
+            new ConfigParser().parse(yamlFile.toFile(), new FakeDeviceFactory()).getHeaders();
+            Assert.fail("Empty  data");
+        }
+        catch (LetsConfideException e)
+        {
+            Assert.assertEquals("Error parsing YAML file: headers section is empty at line 6", e.getMessage());
         }
 
     }

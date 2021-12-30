@@ -1,5 +1,5 @@
 # LetsConfide 
-LetsConfide is a library for securing and managing secret information such as database credentials, used by software. 
+LetsConfide is a library for securing and managing secret information such as database credentials used by software. 
 The current implementation is in Java however, the underlying algorithms and data structures selected are language independent.  
 
 ## Features

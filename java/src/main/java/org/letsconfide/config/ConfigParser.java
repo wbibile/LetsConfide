@@ -217,9 +217,14 @@ public class ConfigParser
     Map<String, byte[]> readData(Iterator<Event> eventIterable)
     {
         Map<String, byte[]> dataMap = new HashMap<>();
-        for (MappingIterator it = new MappingIterator(eventIterable); it.hasNext(); )
+        MappingIterator it = new MappingIterator(eventIterable);
+        while (it.hasNext())
         {
             dataMap.put(it.nextKey(), it.nextValue().getBytes(StandardCharsets.UTF_8));
+        }
+        if(dataMap.isEmpty())
+        {
+             throw createParseException(HEADERS_KEY+" section is empty", it.nextEntry.getStartMark());
         }
         return dataMap;
     }
