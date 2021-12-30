@@ -1,9 +1,10 @@
 # LetsConfide 
-LetsConfide is a library for managing secrete information used by sofware.
+LetsConfide is a library for securing and managing secret information such as database credentials, used by software. 
+The current implementation is in Java however, the underlying algorithms and data structures selected are language independent.  
 
 ## Features
-* Admins input secret information and configuration using YAML 
-* Cryptography backed by a TPM 2.0 module
-* TPM 2.0 root of trust
-* Ablity to configure ciphers and root of trust mechanism 
+* Input and manage secret information using YAML 
+* Encryption keys are backed by a TPM 2.0 module
+* TPM storage keys are authenticated using RTM (Root of Trust Measurement)
+* Ability to configure ciphers used by the TPM 
 
