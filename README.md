@@ -8,3 +8,6 @@ The current implementation is in Java however, the underlying algorithms and dat
 * TPM storage keys are authenticated using RTM (Root of Trust Measurement)
 * Ability to configure ciphers used by the TPM 
 
+## Requirements
+* Requires a JDK 8 compatible development environment at compile time  
+* A TPM 2.0 module and a Java 8 compatible JRE must be abilable at runtime. 
