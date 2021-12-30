@@ -11,3 +11,6 @@ The current implementation is in Java however, the underlying algorithms and dat
 ## Requirements
 * Requires a JDK 8 compatible development environment at compile time  
 * A TPM 2.0 module and a Java 8 compatible JRE must be abilable at runtime. 
+
+## Getting Stasrted 
+Please refer to the example provided in the wiki [Securing Database Credentials](../../wiki/Overview-of-Operation#example-securing-database-credentials) to get started. 
