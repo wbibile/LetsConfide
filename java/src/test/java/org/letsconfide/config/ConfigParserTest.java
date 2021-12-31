@@ -13,6 +13,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static java.nio.file.StandardOpenOption.WRITE;
@@ -269,6 +271,28 @@ public class ConfigParserTest
         catch (LetsConfideException e)
         {
             Assert.assertEquals("Error parsing YAML file: headers section is empty at line 6", e.getMessage());
+        }
+
+    }
+
+    @Test
+    public void testLargeDataValues() throws IOException
+    {
+        Map<String, Object> root = yamlRootWithStandardHeaders();
+        String largeValue = IntStream.range(0, 257).mapToObj(i -> Integer.toString(i % 10)).collect(Collectors.joining());
+        LinkedHashMap<Object, Object> data = new LinkedHashMap<>();
+        data.put("largeValueKey", largeValue);
+        root.put("data", data);
+
+        Path yamlFile = Files.createTempFile("testYaml", ".yaml");
+        Utils.writeToYamlFile(root, yamlFile);
+
+
+        SensitiveDataManager manager = new ConfigParser().parse(yamlFile.toFile(), new FakeDeviceFactory());
+        try(SensitiveDataManager.DataAccessSession session = manager.startDataAccessSession())
+        {
+            // Check data
+            Assert.assertArrayEquals(largeValue.toCharArray(), session.decrypt("largeValueKey"));
         }
 
     }
