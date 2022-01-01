@@ -51,6 +51,11 @@ public class ConfigParser
     private static final String DEVICE_TOKENS_KEY = "deviceTokens";
 
     /**
+     * The maximum number of bytes in a YAML array segment.
+     */
+    private static final int YAML_ARRAY_SEGMENT_SIZE = 36;
+
+    /**
      * Starts parsing the input file.
      * @param file The input file
      * @param deviceFactory A device factory
@@ -376,20 +381,19 @@ public class ConfigParser
      */
     private List<String> splitToYamlArray(byte[] bytes)
     {
-        int segmentSize = 32;
-        int fullSegments = bytes.length / segmentSize;
+        int fullSegments = bytes.length / YAML_ARRAY_SEGMENT_SIZE;
         List<String> result = new ArrayList<>(fullSegments + 1);
         for (int i = 0; i < fullSegments; i++)
         {
-            byte[] part = new byte[segmentSize];
-            System.arraycopy(bytes, i * segmentSize, part, 0, segmentSize);
+            byte[] part = new byte[YAML_ARRAY_SEGMENT_SIZE];
+            System.arraycopy(bytes, i * YAML_ARRAY_SEGMENT_SIZE, part, 0, YAML_ARRAY_SEGMENT_SIZE);
             result.add(Base64.getEncoder().encodeToString(part));
         }
-        int rest = bytes.length % segmentSize;
+        int rest = bytes.length % YAML_ARRAY_SEGMENT_SIZE;
         if (rest > 0)
         {
             byte[] last = new byte[rest];
-            System.arraycopy(bytes, fullSegments * segmentSize, last, 0, rest);
+            System.arraycopy(bytes, fullSegments * YAML_ARRAY_SEGMENT_SIZE, last, 0, rest);
             result.add(Base64.getEncoder().encodeToString(last));
         }
         return result;
