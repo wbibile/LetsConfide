@@ -96,7 +96,10 @@ public class HostDEK
     public static HostDEK from(boolean isEphemeral, byte[] encryptedBytes, byte[] seed)
     {
         // Both GCM iv and gcm associated text (used for MAC validation) are derived from the seed.
-        return new HostDEK(isEphemeral, encryptedBytes, /*iv*/hashHsa256(seed), /*associated text*/seed);
+        byte[] seedHash = hashHsa256(seed);
+        byte iv[] = new byte[12];// GCM mode use 12 byte IVs.
+        System.arraycopy(seedHash, 0, iv, 0, iv.length);// Take the first 12 bytes of the hash
+        return new HostDEK(isEphemeral, encryptedBytes, iv, /*associated text*/seed);
     }
 
     /**

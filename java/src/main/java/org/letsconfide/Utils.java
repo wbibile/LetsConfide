@@ -182,37 +182,35 @@ public class Utils
     }
 
     /**
-     * Splits a larger array of bytes constituting of, concatenated sized encode byte arrays.<BR>
-     * The larger array is a concatenation of logical byte arrays and each logical byte
-     * array has its size encoded in the first two bytes.<BR>
+     * Splits a larger array of bytes consisting of concatenated sized byte arrays.<BR>
      *  Where: <BR>
      * (n)thArraySize: Two bytes encoding the size of the n<sup>th</sup> sub array as an unsigned big-endian integer<BR>
      * (n)thByteArray: Content of the n<sup>th</sup> array and <BR>
      * '+' (Plus sign)             :represents byte array concatenation<BR><BR>
-     *  sizedByteArrayList = (0)thArraySize+(0)thByteArray+(1)thArraySize+(1)thByteArray+...
+     *  inputBytes = (0)thArraySize+(0)thByteArray+(1)thArraySize+(1)thByteArray+...
      *  +(n-2)thArraySize+(n-2)thByteArray+(n-1)thArraySize+(n-1)thByteArray
-     * @param bytes larger array containing sized byte arrays
+     * @param inputBytes larger array containing sized byte arrays
      * @return List of constituent byte arrays
      */
-    public static List<byte[]> splitSizedByteArray(byte[] bytes) throws LetsConfideException
+    public static List<byte[]> splitSizedByteArray(byte[] inputBytes) throws LetsConfideException
     {
         List<byte[]> result = new ArrayList<>(2);
         int size;
-        for (int i = 0; i < bytes.length; )
+        for (int i = 0; i < inputBytes.length; )
         {
-            size = getSizeOfNextEntry(bytes, i);
+            size = getSizeOfNextEntry(inputBytes, i);
             if (size < 0)
             {
                 throw new LetsConfideException("Invalid sized byte array, negative size " + size);
             }
             // Advance i past the size of the two bytes that specify the size of the segment.
             i += 2;
-            if (bytes.length < (i + size))
+            if (inputBytes.length < (i + size))
             {
                 throw new LetsConfideException("Invalid sized byte array, byte segment size " + size + " at index " + i + " is too large");
             }
             byte[] sizedSegment = new byte[size];
-            System.arraycopy(bytes, i, sizedSegment, 0, size);
+            System.arraycopy(inputBytes, i, sizedSegment, 0, size);
             result.add(sizedSegment);
             // Advanced past the sizedSegment.
             i += size;
