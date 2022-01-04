@@ -80,11 +80,13 @@ public class AesEphemeralKey extends TPMKey implements TpmKeyEncryptionKey
         return keyHandle;
     }
 
+    @Override
     public byte[] wrap(byte[] dek)
     {
         return new WrapUnwrapHandler().wrap(dek);
     }
 
+    @Override
     public byte[] unwrap(byte[] encryptedDek)
     {
         return new WrapUnwrapHandler().unwrap(encryptedDek);

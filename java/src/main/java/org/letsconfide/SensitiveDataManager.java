@@ -15,7 +15,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.letsconfide.HostDEK.KEY_SIZE;
+import static org.letsconfide.HostDEK.SEED_SIZE;
+
 
 /**
  * A facade for accessing services provided by LetsConfide.
@@ -66,7 +67,7 @@ public class SensitiveDataManager
     {
         List<byte[]> result = new ArrayList<>();
 
-        byte[] seed = device.getRandomBytes(KEY_SIZE * 2);
+        byte[] seed = device.getRandomBytes(SEED_SIZE);
         HostDEK storageKey = HostDEK.generateNew(false, device, seed);
 
         try (HostDEK.ResolvedDek resolvedEphKey = ephemeralKey.newResolvedDek(device))

@@ -1,13 +1,11 @@
 package org.letsconfide.platform.tpm;
 
 import org.letsconfide.LetsConfideException;
-import org.letsconfide.Utils;
 import org.letsconfide.config.ConfigHeaders;
 import tss.Tpm;
 import tss.tpm.*;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 /**
  * TPM related utilities.
@@ -27,30 +25,14 @@ class TpmUtils
      */
     static byte[] randomBytes(Tpm tpm, int size)
     {
-        return randomBytes(tpm.GetRandom(size), size);
-    }
-
-    // Visible for testing
-    static byte[] randomBytes(byte[] tpmGenerated, int size)
-    {
-        byte[] result;
-        /* The TPM may not generate the amount of bytes we asked of it. The maximum size is
-         * limited to the size of the largest digest that can be produced by the TPM.*/
-        if (size > tpmGenerated.length)
+        byte[] result = new byte[size];
+        int i=0;
+        do
         {
-            result = new byte[size];
-            System.arraycopy(tpmGenerated, 0, result, 0, tpmGenerated.length);
-            for (int i = tpmGenerated.length; i < size; )
-            {
-                byte[] hash = Utils.hashHsa256(Arrays.copyOf(result, i));
-                System.arraycopy(hash, 0, result, i, Math.min(hash.length, (size - i)));
-                i += hash.length;
-            }
-        }
-        else
-        {
-            result = tpmGenerated;
-        }
+            byte[] generated = tpm.GetRandom(size-i);
+            System.arraycopy(generated, 0, result, i, generated.length);
+            i+=generated.length;
+        } while(i < size);
         return result;
     }
 

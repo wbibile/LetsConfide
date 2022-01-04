@@ -15,12 +15,11 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static java.nio.file.StandardOpenOption.WRITE;
@@ -122,23 +121,6 @@ public class Utils
         catch (IOException e)
         {
             throw new LetsConfideException("Unable write to YAML file", e);
-        }
-    }
-
-    /**
-     * Produces the SHA256 hash of the given array of bytes.
-     * @param bytes Array of bytes to hash
-     * @return array if 32 bytes constituting the SHA256 hash
-     */
-    public static byte[] hashHsa256(byte[] bytes)
-    {
-        try
-        {
-            return MessageDigest.getInstance("SHA-256").digest(bytes);
-        }
-        catch (NoSuchAlgorithmException e)
-        {
-            throw new LetsConfideException("SHA256 not supported.");
         }
     }
 
@@ -294,6 +276,25 @@ public class Utils
         // Copy the input bytes to the remaining output bytes.
         System.arraycopy(inputBytes,0,result,2, inputBytes.length);
         return result;
+    }
+
+    /**
+     * Parses the string argument as a signed decimal integer.
+     * @param intString String representation of the integer
+     * @param exceptionSupplier Supplies the exception thrown on parse failure
+     * @return the integer value
+     * @throws LetsConfideException on parse failure
+     */
+    public static int parseInt(String intString, Supplier<LetsConfideException> exceptionSupplier) throws LetsConfideException
+    {
+        try
+        {
+           return Integer.parseInt(intString);
+        }
+        catch (NumberFormatException e)
+        {
+            throw exceptionSupplier.get();
+        }
     }
 
 }

@@ -67,10 +67,10 @@ public class ConfigParser
         Map<String, byte[]> unencryptedData;
         EncryptedData encryptedData;
         SensitiveDataManager manager;
-        try (ConfigInputStream input = new ConfigInputStream(Files.newInputStream(file.toPath(), READ)))
+        try (InputStreamReader reader = new InputStreamReader(new ConfigInputStream(Files.newInputStream(file.toPath(), READ)), StandardCharsets.UTF_8))
         {
             Yaml yaml = new Yaml();
-            Iterator<Event> eventIter = yaml.parse(new InputStreamReader(input, StandardCharsets.UTF_8)).iterator();
+            Iterator<Event> eventIter = yaml.parse(reader).iterator();
             consumeStreamStart(eventIter);
             Event currentEvent = checkAndGetNextEvent(eventIter, Scalar);
             headers = DEFAULT;
@@ -207,7 +207,7 @@ public class ConfigParser
                     ephemeralKeyType = CipherType.valueOf(it.nextValue());
                     break;
                 case PCR_SELECTION_KEY:
-                    pcrSelection = Integer.parseInt(it.nextValue());
+                    pcrSelection = Utils.parseInt(it.nextValue(), () -> createParseException(PCR_SELECTION_KEY+" is malformed", it.getCurrentLineStart()));
                     break;
                 case PCR_HASH_KEY:
                     pcrHash = HashType.valueOf(it.nextValue());
@@ -312,8 +312,6 @@ public class ConfigParser
         private byte[] nextByteArray()
         {
             getNextEntry(SequenceStart);
-//            checkAndGetNextEvent(eventIter, SequenceStart);
-            int size = 0;
             List<byte[]> list = new ArrayList<>();
             while (true)
             {
@@ -322,7 +320,6 @@ public class ConfigParser
                 {
 
                     byte[] bytes = Base64.getDecoder().decode(getScalarValue(event));
-                    size += bytes.length;
                     list.add(bytes);
                 }
                 else

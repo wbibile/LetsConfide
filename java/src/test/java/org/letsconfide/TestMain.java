@@ -181,7 +181,7 @@ public class TestMain
         ConfigHeaders h = m.getHeaders();
         Assert.assertEquals(CipherType.valueOf(testConfig.getHeaders().get("primaryKeyType")), h.getPrimaryKeyType());
         Assert.assertEquals(CipherType.valueOf(testConfig.getHeaders().get("storageKeyType")), h.getStorageKeyType());
-        Assert.assertEquals(Integer.parseInt(testConfig.getHeaders().get("pcrSelection")), h.getPcrSelection());
+        Assert.assertEquals(Utils.parseInt(testConfig.getHeaders().get("pcrSelection"), LetsConfideException::new), h.getPcrSelection());
         Assert.assertEquals(HashType.valueOf(testConfig.getHeaders().get("pcrHash")), h.getPcrHash());
     }
 

@@ -1,6 +1,9 @@
 package org.letsconfide.platform;
 
 import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.macs.HMac;
+import org.bouncycastle.crypto.params.KeyParameter;
 import org.letsconfide.LetsConfideException;
 import org.letsconfide.Utils;
 import org.letsconfide.config.ConfigHeaders;
@@ -46,12 +49,17 @@ public class FakeDeviceFactory implements DeviceFactory
         private static byte[] makeAesKey(List<byte[]> deviceTokens)
         {
             assert deviceTokens.size() == 2;
-            assert deviceTokens.get(0).length == 128;
-            assert deviceTokens.get(1).length == 128;
-            byte[] result = new byte[256];
-            System.arraycopy(deviceTokens.get(0), 0, result, 0, 128);
-            System.arraycopy(deviceTokens.get(1), 0, result, 128, 128);
-            return Utils.hashHsa256(result);
+            byte[] tokens0 = deviceTokens.get(0);
+            byte[] tokens1 = deviceTokens.get(1);
+
+            assert tokens0.length == 128;
+            assert tokens1.length == 128;
+            HMac mac = new HMac(new SHA256Digest());
+            mac.init(new KeyParameter(tokens0));
+            mac.update(tokens1, 0, tokens1.length);
+            byte[] result = new byte[32];
+            mac.doFinal(result, 0);
+            return result;
         }
 
         @Override

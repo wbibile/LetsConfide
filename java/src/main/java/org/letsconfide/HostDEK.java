@@ -5,7 +5,6 @@ import org.letsconfide.platform.SecurityDevice;
 
 import java.util.function.Function;
 
-import static org.letsconfide.Utils.hashHsa256;
 import static org.letsconfide.Utils.isZero;
 
 /**
@@ -25,7 +24,11 @@ public class HostDEK
 {
 
     // Key size in bytes (256 bit)
-    public static final int KEY_SIZE = 32;
+    private static final int KEY_SIZE = 32;
+    // Seed size in bytes
+    public static final int SEED_SIZE = KEY_SIZE*2;
+    // GSM IV size in bytes
+    private static final int GSM_IV_SIZE = 12;
     private final byte[] encryptedKey;
     private final boolean isEphemeral;
     private final byte[] gcmAssociatedText;
@@ -54,7 +57,7 @@ public class HostDEK
      */
     public static HostDEK generateNew(boolean isEphemeral, SecurityDevice device)
     {
-        return generateNew(isEphemeral, device, device.getRandomBytes(KEY_SIZE * 2));
+        return generateNew(isEphemeral, device, device.getRandomBytes(SEED_SIZE));
     }
 
 
@@ -68,7 +71,7 @@ public class HostDEK
      */
     public static HostDEK generateNew(boolean isEphemeral, SecurityDevice device, byte[] seed)
     {
-        assert (seed.length >= KEY_SIZE * 2);
+        assert (seed.length >= SEED_SIZE);
         byte[] keyBytes;
         do
         {
@@ -95,11 +98,16 @@ public class HostDEK
      */
     public static HostDEK from(boolean isEphemeral, byte[] encryptedBytes, byte[] seed)
     {
-        // Both GCM iv and gcm associated text (used for MAC validation) are derived from the seed.
-        byte[] seedHash = hashHsa256(seed);
-        byte iv[] = new byte[12];// GCM mode use 12 byte IVs.
-        System.arraycopy(seedHash, 0, iv, 0, iv.length);// Take the first 12 bytes of the hash
-        return new HostDEK(isEphemeral, encryptedBytes, iv, /*associated text*/seed);
+        if(seed.length != SEED_SIZE)
+        {
+            throw new LetsConfideException("Invalid seed size "+seed.length);
+        }
+
+        byte[] iv = new byte[GSM_IV_SIZE];
+        System.arraycopy(seed, 0, iv, 0, GSM_IV_SIZE); //First two bytes of the seed is the IV
+        byte[] associatedText = new byte[SEED_SIZE - GSM_IV_SIZE];  //Remaining bytes of the seed are the associated text
+        System.arraycopy(seed, GSM_IV_SIZE, associatedText, 0, associatedText.length); // Take the first 12 bytes of the hash
+        return new HostDEK(isEphemeral, encryptedBytes, iv, associatedText);
     }
 
     /**
