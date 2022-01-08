@@ -4,9 +4,9 @@ The current implementation is in Java however, the underlying algorithms and dat
 
 ## Features
 * Input and manage secret information using YAML 
-* Encryption keys are backed by a TPM 2.0 module
-* Storage keys are authenticated using a Root of Trust Measurement (RTM)
-* Ciphers and RTM used by the TPM are configurable 
+* Cryptography backed by a TPM 2.0 module
+* Entities accessing secret information are authenticated using a Root of Trust Measurement 
+* Ability to configure the ciphers and Root of Trust Measurement used by the TPM 
 
 ## Requirements
 * Requires a JDK 8 compatible development environment at compile time  
