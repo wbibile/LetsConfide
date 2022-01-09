@@ -24,7 +24,7 @@ public class HostDEK
 {
 
     // Key size in bytes (256 bit)
-    private static final int KEY_SIZE = 32;
+    public static final int KEY_SIZE = 32;
     // Seed size in bytes
     public static final int SEED_SIZE = KEY_SIZE*2;
     // GSM IV size in bytes

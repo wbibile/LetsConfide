@@ -43,7 +43,7 @@ public class Utils
     public static boolean isZero(byte[] bytes, int start, int end)
     {
         assert start < end : "Stat is greater than end";
-        assert end < bytes.length : "End is out of range";
+        assert end <= bytes.length : "End is out of range";
         boolean result = true;
         for (int i = start; i < end; i++)
         {
