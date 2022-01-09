@@ -11,7 +11,7 @@ import static org.letsconfide.HostDEK.KEY_SIZE;
 
 /**
  * Responsible for handling DEK (Data Encryption Key) wrap and unwrap operations using a TPM based AES KEK (Key Encryption Key).
- * This class centralizes the management of the IV (Initialization Vector) used the block cipher mode of operation and management of additional padding.
+ * This class centralizes the management of the IV (Initialization Vector) used the block cipher mode of operation and additional padding.
  */
 abstract class AESWrapUnwrapHandler
 {
