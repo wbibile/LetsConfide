@@ -5,8 +5,8 @@ The current implementation is in Java however, the underlying algorithms and dat
 ## Features
 * Input and manage secret information using YAML 
 * Cryptography backed by a TPM 2.0 module
-* Persistent TPM keys sealed using a root of trust 
-* Ability to configure ciphers and Root of Trust used by the TPM 
+* Persistent TPM keys are sealed using a TPM root of trust 
+* Ability to configure ciphers and root of trust used by the TPM 
 
 ## Requirements
 * Requires a JDK 8 compatible development environment at compile time  
