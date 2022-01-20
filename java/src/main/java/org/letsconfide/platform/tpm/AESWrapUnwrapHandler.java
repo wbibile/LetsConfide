@@ -38,8 +38,9 @@ abstract class AESWrapUnwrapHandler
         }
         byte[] padding = TpmUtils.randomBytes(tpm, KEY_SIZE);
         byte[] dekWithPadding = new byte[KEY_SIZE*2];
-        System.arraycopy(dek, 0, dekWithPadding, 0, KEY_SIZE);
-        System.arraycopy(padding, 0, dekWithPadding, KEY_SIZE, KEY_SIZE);
+        // Prepend padding to bytes which in CFB mode will affect downstream bytes.
+        System.arraycopy(padding, 0, dekWithPadding, 0, KEY_SIZE);
+        System.arraycopy(dek, 0, dekWithPadding, KEY_SIZE, KEY_SIZE);
 
         // Generate a non zero IV.
         byte[] iv;
@@ -90,7 +91,7 @@ abstract class AESWrapUnwrapHandler
             throw new LetsConfideException("Invalid encrypted key length");
         }
         byte[] result = new byte[KEY_SIZE];
-        System.arraycopy(keyWithPadding, 0, result,0, KEY_SIZE);
+        System.arraycopy(keyWithPadding, KEY_SIZE, result,0, KEY_SIZE);
         Utils.erase(keyWithPadding);
         return result;
     }
@@ -99,7 +100,6 @@ abstract class AESWrapUnwrapHandler
     {
         return new LetsConfideException("Encrypted key format is invalid");
     }
-
 
     /**
      * Unwraps the DEK using the device.

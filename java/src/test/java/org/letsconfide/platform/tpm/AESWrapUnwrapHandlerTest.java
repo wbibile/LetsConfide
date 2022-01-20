@@ -34,11 +34,11 @@ public class AESWrapUnwrapHandlerTest
         // Checking the encrypted key (which is not encrypted under the fake implementation).
         byte[] encryptedKey = parts.get(1);
         Assert.assertEquals(64, encryptedKey.length);
-        Assert.assertArrayEquals(aesKey, Arrays.copyOfRange(encryptedKey, 0,32));
+        // Make sure that the DEK  is prepended.
+        Assert.assertArrayEquals(aesKey, Arrays.copyOfRange(encryptedKey, 32,64));
 
         byte[] unwrappedKey = handler.unwrap(wrappedKey);
         Assert.assertArrayEquals(aesKey, unwrappedKey);
-
     }
 
     /**
